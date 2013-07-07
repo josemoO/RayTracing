@@ -24,7 +24,7 @@ CLEAN_SUBPROJECTS=${CLEAN_SUBPROJECTS_${SUBPROJECTS}}
 
 
 # Project Name
-PROJECTNAME=Ray_Tracing
+PROJECTNAME=RayTracing
 
 # Active Configuration
 DEFAULTCONF=Debug

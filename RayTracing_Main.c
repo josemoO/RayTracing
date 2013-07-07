@@ -41,7 +41,7 @@ VECTOR calculateVectorToLight_L(VECTOR intersection, VECTOR lightPoint, long dou
 long double attenuationFactor(VECTOR intersection, LIGHT_POINT light);
 int save_png_to_file(const char *path);
 RGB getAntialiasingColor(long double i, long double j, long double unit, int depth, int mirrors_level, int transparency_level);
-void displayImage();
+void rayTracing();
 RGB frameBuffer[H_RES][V_RES];
 
 double testPointI = 350;
@@ -55,6 +55,10 @@ int main(int argc, char** argv) {
 
     //Create the scene
     readScene("ModernHouse");
+
+    rayTracing();
+
+    save_png_to_file("image.png");
 
     //Create the window
     glutInit(&argc, argv);
@@ -71,12 +75,21 @@ int main(int argc, char** argv) {
 
     glutMainLoop();
 
+
+
+
     display();
     return (EXIT_SUCCESS);
 }
 
-void display(void) {
+void rayTracing() {
+    time_t startTimeBeen = time(NULL), endTimeBeen;
+    struct tm startTime = *localtime(&startTimeBeen), endTime;
+    double startTimeSeconds, endTimeSeconds, differenceSeconds, differenceMinutesRest, differenceHoursRest;
+    int differenceMinutes, differenceHours;
+    startTimeSeconds = startTime.tm_sec + (startTime.tm_min * 60) + (startTime.tm_hour * 60 * 60);
 
+    printf("Start Time: %d-%d-%d %d:%d:%d\n", startTime.tm_year + 1900, startTime.tm_mon + 1, startTime.tm_mday, startTime.tm_hour, startTime.tm_min, startTime.tm_sec);
     int i, j; //Control the vertical and horizontal pixels
 
     for (i = 0; i < H_RES; i++) {
@@ -88,9 +101,41 @@ void display(void) {
             frameBuffer[i][j] = getAntialiasingColor((long double) i, (long double) j, 1, 5, mirrorLevels, 0);
         }
     }
+    endTimeBeen = time(NULL);
+    endTime = *localtime(&endTimeBeen);
+    endTimeSeconds = endTime.tm_sec + (endTime.tm_min * 60) + (endTime.tm_hour * 60 * 60);
+    printf("End Time: %d-%d-%d %d:%d:%d\n", endTime.tm_year + 1900, endTime.tm_mon + 1, endTime.tm_mday, endTime.tm_hour, endTime.tm_min, endTime.tm_sec);
+    differenceSeconds = endTimeSeconds - startTimeSeconds;
+    
+    differenceHours = differenceSeconds / 60 / 60;
+    differenceHoursRest = ( ((int) differenceSeconds / 60) % 60);
+    differenceMinutes = (differenceSeconds - (differenceHours * 60 * 60)) / 60;
+    differenceMinutesRest = ( (int) (differenceSeconds - (differenceHours * 60 * 60)) ) % 60;;
+    
+    
+    
+    printf("Time: %d:%d:%0.f\n", differenceHours, differenceMinutes, differenceMinutesRest);
+    
+}
 
-    displayImage();
-    save_png_to_file("image.png");
+void display(void) {
+    glBegin(GL_POINTS);
+    int i, j;
+    for (i = 0; i < H_RES; i++) {
+        for (j = 0; j < V_RES; j++) {
+
+            glColor3f(frameBuffer[i][j].r, frameBuffer[i][j].g, frameBuffer[i][j].b);
+            glVertex2i(i, j);
+        }
+    }
+    /*
+
+        glColor3f(1.0, 0.0, 0.0);
+        glVertex2i(testPointI, testPointJ);
+     */
+
+    glEnd();
+    glFlush(); //Reload the window    
 }
 
 RGB getAntialiasingColor(long double i, long double j, long double unit, int depth, int mirrors_level, int transparency_level) {
@@ -245,7 +290,7 @@ RGB whichColor(VECTOR *anchor, VECTOR *rayFromEyeDirection, int reflexionLevel, 
         *setBackground = 1;
         color = backgroundColor;
     } else {
-        
+
         //Calculate Vector V, which is a vector to points back to the light, it is the same vector D but with the inverse direction
         vectorToEye_v.x = rayFromEyeDirection->x * -1; //With this is inverse the direction
         vectorToEye_v.y = rayFromEyeDirection->y * -1;
@@ -254,7 +299,7 @@ RGB whichColor(VECTOR *anchor, VECTOR *rayFromEyeDirection, int reflexionLevel, 
         iluminatePixel(anchor, rayFromEyeDirection, &color, &intersection->data.intersection);
         if (APPLY_MIRRORS) {
             if (intersection->data.intersection.object.O2 > 0.0 && reflexionLevel > 0) {
-                
+
                 int isReflexionBackground = 0;
                 productPointN_V = dotProduct(&intersection->data.intersection.object.dependedNormal, &vectorToEye_v);
                 vectorReflexionOfV_R.x = 2 * productPointN_V * intersection->data.intersection.object.dependedNormal.x - vectorToEye_v.x;
@@ -419,7 +464,7 @@ void firstIntersection(VECTOR *eyePosition, VECTOR *rayFromEyeDirection, LIST_NO
                 sphereIntersection(eyePosition, rayFromEyeDirection, &scene->data.object, intersections);
                 break;
             case POLYGON:
-                    if (stop) {
+                if (stop) {
                     int trash = 0;
                 }
                 polygonIntersection(eyePosition, rayFromEyeDirection, &scene->data.object, intersections);
@@ -571,24 +616,3 @@ int save_png_to_file(const char *path) {
     }
     png_free(png_ptr, row_pointers);
 }
-
-void displayImage() {
-    glBegin(GL_POINTS);
-    int i, j;
-    for (i = 0; i < H_RES; i++) {
-        for (j = 0; j < V_RES; j++) {
-
-            glColor3f(frameBuffer[i][j].r, frameBuffer[i][j].g, frameBuffer[i][j].b);
-            glVertex2i(i, j);
-        }
-    }
-/*
-
-    glColor3f(1.0, 0.0, 0.0);
-    glVertex2i(testPointI, testPointJ);
-*/
-
-    glEnd();
-    glFlush(); //Reload the window
-}
-
